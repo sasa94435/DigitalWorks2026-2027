@@ -12,7 +12,7 @@ export interface StudentProject {
 }
 
 export async function getStudentProjects(): Promise<StudentProject[]> {
-  const TOPIC = 'class-2026';
+  const TOPIC = 'digitalworks-2026';
   // 特定のOrganizationに絞る場合は org:your-org-name を追加
   const query = `topic:${TOPIC}`; 
   
