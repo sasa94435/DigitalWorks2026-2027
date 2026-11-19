@@ -1,6 +1,13 @@
 ---
 import { getStudentProjects } from '../lib/github';
 
+// スライダーに表示する画像リスト（枚数の増減やファイル名の変更はここを編集）
+const headerImages = [
+  { src: '/header1.png', alt: 'Student Work Gallery 2026 - Slide 1' },
+  { src: '/header2.png', alt: 'Student Work Gallery 2026 - Slide 2' },
+  { src: '/header3.png', alt: 'Student Work Gallery 2026 - Slide 3' },
+];
+
 // 取得したプロジェクト一覧をビルド時にランダムにシャッフル
 const allProjects = (await getStudentProjects()).sort(() => Math.random() - 0.5);
 
@@ -23,14 +30,68 @@ const regularProjects = allProjects.filter(
     <title>Student Work Gallery 2026</title>
   </head>
   <body class="bg-yellow-300 text-gray-900 p-4 sm:p-6 md:p-12 min-h-screen">
-    <!-- ヘッダー画像 -->
+    <!-- ヘッダースライダー -->
     <header class="max-w-7xl mx-auto mb-10 sm:mb-16">
-      <div class="w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-xl border-2 border-gray-900/10 bg-gray-900">
-        <img
-          src="/header.png"
-          alt="Student Work Gallery 2026"
-          class="w-full h-auto max-h-96 object-cover"
-        />
+      <div
+        id="header-slider"
+        class="relative w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-xl border-2 border-gray-900/10 bg-gray-900 group select-none"
+      >
+        <!-- スライド画像トラック -->
+        <div
+          id="slider-track"
+          class="flex transition-transform duration-500 ease-out"
+        >
+          {headerImages.map((img) => (
+            <div class="w-full shrink-0">
+              <img
+                src={img.src}
+                alt={img.alt}
+                class="w-full h-auto max-h-96 object-cover block"
+              />
+            </div>
+          ))}
+        </div>
+
+        <!-- 画像が2枚以上ある場合のみ矢印ボタンとドットを表示 -->
+        {headerImages.length > 1 && (
+          <>
+            <!-- 前へボタン -->
+            <button
+              id="prev-btn"
+              type="button"
+              aria-label="前のスライド"
+              class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/45 hover:bg-black/75 text-white flex items-center justify-center transition opacity-80 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-xs cursor-pointer"
+            >
+              ‹
+            </button>
+
+            <!-- 次へボタン -->
+            <button
+              id="next-btn"
+              type="button"
+              aria-label="次のスライド"
+              class="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/45 hover:bg-black/75 text-white flex items-center justify-center transition opacity-80 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-xs cursor-pointer"
+            >
+              ›
+            </button>
+
+            <!-- 下部インジケーター（ドット） -->
+            <div
+              id="slider-dots"
+              class="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-10 flex space-x-2"
+            >
+              {headerImages.map((_, index) => (
+                <button
+                  type="button"
+                  aria-label={`スライド ${index + 1}`}
+                  class={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all cursor-pointer ${
+                    index === 0 ? 'bg-white scale-110' : 'bg-white/50 hover:bg-white/80'
+                  }`}
+                />
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </header>
 
@@ -176,5 +237,91 @@ const regularProjects = allProjects.filter(
       </section>
 
     </main>
+
+    <!-- スライダー制御スクリプト -->
+    <script>
+      const slider = document.getElementById('header-slider');
+      const track = document.getElementById('slider-track');
+      const prevBtn = document.getElementById('prev-btn');
+      const nextBtn = document.getElementById('next-btn');
+      const dotsContainer = document.getElementById('slider-dots');
+
+      if (slider && track && dotsContainer) {
+        const dots = Array.from(dotsContainer.querySelectorAll('button'));
+        const totalSlides = dots.length;
+        let currentIndex = 0;
+        let autoPlayTimer = null;
+
+        if (totalSlides > 1) {
+          const updateSlider = (index) => {
+            currentIndex = (index + totalSlides) % totalSlides;
+            track.style.transform = `translateX(-${currentIndex * 100}%)`;
+
+            dots.forEach((dot, i) => {
+              if (i === currentIndex) {
+                dot.classList.remove('bg-white/50', 'hover:bg-white/80');
+                dot.classList.add('bg-white', 'scale-110');
+              } else {
+                dot.classList.remove('bg-white', 'scale-110');
+                dot.classList.add('bg-white/50', 'hover:bg-white/80');
+              }
+            });
+          };
+
+          const startAutoPlay = () => {
+            stopAutoPlay();
+            autoPlayTimer = window.setInterval(() => {
+              updateSlider(currentIndex + 1);
+            }, 5000); // 5秒ごとに自動スライド
+          };
+
+          const stopAutoPlay = () => {
+            if (autoPlayTimer) {
+              clearInterval(autoPlayTimer);
+              autoPlayTimer = null;
+            }
+          };
+
+          prevBtn?.addEventListener('click', () => {
+            updateSlider(currentIndex - 1);
+            startAutoPlay();
+          });
+
+          nextBtn?.addEventListener('click', () => {
+            updateSlider(currentIndex + 1);
+            startAutoPlay();
+          });
+
+          dots.forEach((dot, i) => {
+            dot.addEventListener('click', () => {
+              updateSlider(i);
+              startAutoPlay();
+            });
+          });
+
+          // PCでカーソルが乗っている間は自動再生を一時停止
+          slider.addEventListener('mouseenter', stopAutoPlay);
+          slider.addEventListener('mouseleave', startAutoPlay);
+
+          // スマホでの左右スワイプ操作に対応
+          let touchStartX = 0;
+          slider.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            stopAutoPlay();
+          }, { passive: true });
+
+          slider.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].screenX;
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 40) {
+              updateSlider(diff > 0 ? currentIndex + 1 : currentIndex - 1);
+            }
+            startAutoPlay();
+          }, { passive: true });
+
+          startAutoPlay();
+        }
+      }
+    </script>
   </body>
 </html>
