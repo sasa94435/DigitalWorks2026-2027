@@ -11,7 +11,7 @@ const headerImages = [
 // 取得したプロジェクト一覧をビルド時にランダムにシャッフル
 const allProjects = (await getStudentProjects()).sort(() => Math.random() - 0.5);
 
-// Topics に 'featured-2026' が含まれる作品を優秀作品として抽出
+// Topics に 'featured-2026' が含まれる作品を優秀作品として抽出や
 const featuredProjects = allProjects.filter((project) =>
   project.topics?.includes('featured-2026')
 );
